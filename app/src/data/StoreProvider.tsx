@@ -53,15 +53,23 @@ export function useStore(): Store {
   return s;
 }
 
-/** 데이터가 바뀌면 다시 그린다 */
+/**
+ * 데이터가 바뀌면 다시 그린다.
+ * 스냅샷(데이터 객체)을 직접 돌려받아야 한다. s.get()을 따로 부르면
+ * React Compiler가 그 결과를 기억해 두어 화면이 옛 데이터에 머문다.
+ */
 export function useData() {
   const s = useStore();
-  useSyncExternalStore(s.subscribe, s.getVersion);
-  return s.get();
+  return useSyncExternalStore(s.subscribe, s.get);
 }
 
 export function useKeys() {
   const s = useStore();
-  useSyncExternalStore(s.subscribe, s.getVersion);
-  return s.getKeys();
+  return useSyncExternalStore(s.subscribe, s.getKeys);
+}
+
+/** 모델 목록처럼 데이터 밖의 값이 바뀌어도 다시 그릴 때 */
+export function useVersion() {
+  const s = useStore();
+  return useSyncExternalStore(s.subscribe, s.getVersion);
 }

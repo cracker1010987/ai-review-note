@@ -6,7 +6,7 @@ import { examPlan } from './exam.ts';
 import { reviewQueue, streakDays, weakLeaves, weekData, type Snapshot } from './review.ts';
 import { defaultSettings, normalizeSettings } from './settings.ts';
 import { applySrs, isDue } from './srs.ts';
-import { leaves } from './subject.ts';
+import { buildUnits, leaves } from './subject.ts';
 import type { Exam, Note, Subject } from './types.ts';
 
 const TODAY = new Date(2026, 10, 22, 15, 0); // 2026-11-22
@@ -113,4 +113,31 @@ test('설정 보정: 빠진 값 채우기, 작업별 설정 정리', () => {
   assert.deepEqual(s.tiers.verify, { p: '', m: '' });
   assert.equal(s.intervals, 'normal');
   assert.equal(s.tagPresets.length, 6);
+});
+
+test('목차를 다시 읽어도 이름이 같은 단원은 id를 이어받는다', () => {
+  const old: Subject = {
+    id: 's1', courseId: 'c1', name: '수학',
+    units: [
+      { id: 'u1', name: '함수', subs: [{ id: 'l1', name: '일차함수' }, { id: 'l2', name: '이차함수' }] },
+      { id: 'u2', name: '확률', subs: [] },
+    ],
+  };
+  let k = 0;
+  const units = buildUnits(
+    old,
+    [
+      { id: '', name: ' 함수 ', subs: [{ id: '', name: '이차함수' }, { id: '', name: '유리함수' }, { id: '', name: '  ' }] },
+      { id: '', name: '확률', subs: [] },
+      { id: '', name: '', subs: [{ id: '', name: '버려짐' }] },
+    ],
+    (p) => `${p}new${++k}`,
+  );
+  assert.deepEqual(units, [
+    { id: 'u1', name: '함수', subs: [{ id: 'l2', name: '이차함수' }, { id: 'l_new1', name: '유리함수' }] },
+    { id: 'u2', name: '확률', subs: [] },
+  ]);
+  // 같은 id가 두 번 나오면 두 번째는 새 id
+  const dup = buildUnits(old, [{ id: 'u1', name: 'A', subs: [] }, { id: 'u1', name: 'B', subs: [] }], (p) => p + 'x');
+  assert.deepEqual(dup.map((u) => u.id), ['u1', 'u_x']);
 });

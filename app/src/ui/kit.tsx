@@ -1,36 +1,58 @@
-import { router } from 'expo-router';
-import type { ReactNode } from 'react';
+import { router } from "expo-router";
+import { MaterialIcons } from "@expo/vector-icons";
+import type { ComponentProps, ReactNode } from "react";
 import {
   ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  ToastAndroid,
   View,
   type StyleProp,
   type TextInputProps,
   type TextStyle,
   type ViewStyle,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { radius, space, useColors } from './theme';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { radius, space, useColors } from "./theme";
 
-type TVariant = 'title' | 'h2' | 'h3' | 'body' | 'small' | 'caption' | 'label';
+type TVariant = "title" | "h2" | "h3" | "body" | "small" | "caption" | "label";
 const T_STYLE: Record<TVariant, TextStyle> = {
-  title: { fontSize: 24, fontWeight: '700', lineHeight: 32 },
-  h2: { fontSize: 19, fontWeight: '700', lineHeight: 26 },
-  h3: { fontSize: 16, fontWeight: '700', lineHeight: 22 },
+  title: { fontSize: 24, fontWeight: "700", lineHeight: 32 },
+  h2: { fontSize: 19, fontWeight: "700", lineHeight: 26 },
+  h3: { fontSize: 16, fontWeight: "700", lineHeight: 22 },
   body: { fontSize: 15, lineHeight: 23 },
   small: { fontSize: 13, lineHeight: 19 },
   caption: { fontSize: 12, lineHeight: 17 },
-  label: { fontSize: 13, fontWeight: '600', lineHeight: 18 },
+  label: { fontSize: 13, fontWeight: "600", lineHeight: 18 },
 };
 
-export function T({ v = 'body', muted, color, style, children, ...rest }: { v?: TVariant; muted?: boolean; color?: string; style?: StyleProp<TextStyle>; children: ReactNode; numberOfLines?: number }) {
+export function T({
+  v = "body",
+  muted,
+  color,
+  style,
+  children,
+  ...rest
+}: {
+  v?: TVariant;
+  muted?: boolean;
+  color?: string;
+  style?: StyleProp<TextStyle>;
+  children: ReactNode;
+  numberOfLines?: number;
+}) {
   const c = useColors();
   return (
-    <Text style={[T_STYLE[v], { color: color || (muted ? c.muted : c.ink) }, style]} {...rest}>
+    <Text
+      style={[T_STYLE[v], { color: color || (muted ? c.muted : c.ink) }, style]}
+      {...rest}
+    >
       {children}
     </Text>
   );
@@ -39,14 +61,19 @@ export function T({ v = 'body', muted, color, style, children, ...rest }: { v?: 
 /** 화면 틀: 안전 영역 + 위쪽 제목줄 + 스크롤 */
 export function Screen({
   title,
+  sub,
   back,
+  onBack,
   right,
   scroll = true,
   children,
   footer,
 }: {
   title?: string;
+  sub?: string;
   back?: boolean;
+  /** 뒤로 가기 전에 할 일 (없으면 그냥 뒤로) */
+  onBack?: () => void;
   right?: ReactNode;
   scroll?: boolean;
   children: ReactNode;
@@ -54,65 +81,124 @@ export function Screen({
 }) {
   const c = useColors();
   const body = scroll ? (
-    <ScrollView contentContainerStyle={{ padding: space.lg, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      contentContainerStyle={{ padding: space.lg, paddingBottom: 40 }}
+      keyboardShouldPersistTaps="handled"
+    >
       {children}
     </ScrollView>
   ) : (
     <View style={{ flex: 1, padding: space.lg }}>{children}</View>
   );
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.paper }} edges={['top', 'bottom']}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: c.paper }}
+      edges={["top", "bottom"]}
+    >
       {(title || back) && (
         <View style={[styles.bar, { borderBottomColor: c.line }]}>
           {back && (
-            <Pressable accessibilityRole="button" accessibilityLabel="뒤로" onPress={() => router.back()} hitSlop={12} style={styles.iconBtn}>
-              <Text style={{ fontSize: 22, color: c.ink }}>‹</Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="뒤로"
+              onPress={onBack || (() => router.back())}
+              hitSlop={12}
+              style={styles.iconBtn}
+            >
+              <MaterialIcons name="arrow-back" size={24} color={c.ink} />
             </Pressable>
           )}
-          <T v="h2" style={{ flex: 1 }} numberOfLines={1}>
-            {title || ''}
-          </T>
+          <View style={{ flex: 1 }}>
+            <T v="h2" numberOfLines={1}>
+              {title || ""}
+            </T>
+            {sub ? (
+              <T v="caption" muted numberOfLines={1}>
+                {sub}
+              </T>
+            ) : null}
+          </View>
           {right}
         </View>
       )}
       {body}
-      {footer && <View style={{ padding: space.lg, paddingTop: space.sm, borderTopWidth: 1, borderTopColor: c.line, backgroundColor: c.surface }}>{footer}</View>}
+      {footer && (
+        <View
+          style={{
+            padding: space.lg,
+            paddingTop: space.sm,
+            borderTopWidth: 1,
+            borderTopColor: c.line,
+            backgroundColor: c.surface,
+          }}
+        >
+          {footer}
+        </View>
+      )}
     </SafeAreaView>
   );
 }
 
-export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
+export function Card({
+  children,
+  style,
+}: {
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
   const c = useColors();
-  return <View style={[{ backgroundColor: c.surface, borderColor: c.line, borderWidth: 1, borderRadius: radius.lg, padding: 14, marginBottom: space.md }, style]}>{children}</View>;
+  return (
+    <View
+      style={[
+        {
+          backgroundColor: c.surface,
+          borderColor: c.line,
+          borderWidth: 1,
+          borderRadius: radius.lg,
+          padding: 14,
+          marginBottom: space.md,
+        },
+        style,
+      ]}
+    >
+      {children}
+    </View>
+  );
 }
 
 export function Button({
   title,
   onPress,
-  kind = 'primary',
+  kind = "primary",
   disabled,
   busy,
   style,
 }: {
   title: string;
   onPress?: () => void;
-  kind?: 'primary' | 'ghost' | 'danger' | 'link';
+  kind?: "primary" | "ghost" | "danger" | "link";
   disabled?: boolean;
   busy?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   const c = useColors();
   const off = disabled || busy;
-  if (kind === 'link')
+  if (kind === "link")
     return (
-      <Pressable accessibilityRole="button" onPress={onPress} disabled={off} hitSlop={8} style={[{ paddingVertical: 6, alignSelf: 'center' }, style]}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={onPress}
+        disabled={off}
+        hitSlop={8}
+        style={[{ paddingVertical: 6, alignSelf: "center" }, style]}
+      >
         <T v="label" color={c.blue}>
           {title}
         </T>
       </Pressable>
     );
-  const bg = kind === 'primary' ? c.blue : c.surface;
-  const fg = kind === 'primary' ? c.onBlue : kind === 'danger' ? c.red : c.ink;
+  const bg = kind === "primary" ? c.blue : c.surface;
+  const fg = kind === "primary" ? c.onBlue : kind === "danger" ? c.red : c.ink;
   return (
     <Pressable
       accessibilityRole="button"
@@ -121,16 +207,30 @@ export function Button({
       disabled={off}
       style={({ pressed }) => [
         styles.btn,
-        { backgroundColor: bg, borderColor: kind === 'primary' ? bg : c.line, opacity: off ? 0.45 : pressed ? 0.85 : 1 },
+        {
+          backgroundColor: bg,
+          borderColor: kind === "primary" ? bg : c.line,
+          opacity: off ? 0.45 : pressed ? 0.85 : 1,
+        },
         style,
       ]}
     >
-      {busy ? <ActivityIndicator color={fg} /> : <Text style={{ color: fg, fontSize: 15, fontWeight: '600' }}>{title}</Text>}
+      {busy ? (
+        <ActivityIndicator color={fg} />
+      ) : (
+        <Text style={{ color: fg, fontSize: 15, fontWeight: "600" }}>
+          {title}
+        </Text>
+      )}
     </Pressable>
   );
 }
 
-export function Field({ label, hint, ...input }: { label: string; hint?: ReactNode } & TextInputProps) {
+export function Field({
+  label,
+  hint,
+  ...input
+}: { label: string; hint?: ReactNode } & TextInputProps) {
   const c = useColors();
   return (
     <View style={{ marginBottom: space.md }}>
@@ -140,10 +240,14 @@ export function Field({ label, hint, ...input }: { label: string; hint?: ReactNo
       <TextInput
         placeholderTextColor={c.muted}
         {...input}
-        style={[styles.input, { borderColor: c.line, backgroundColor: c.paper, color: c.ink }, input.style]}
+        style={[
+          styles.input,
+          { borderColor: c.line, backgroundColor: c.paper, color: c.ink },
+          input.style,
+        ]}
       />
       {hint ? (
-        typeof hint === 'string' ? (
+        typeof hint === "string" ? (
           <T v="caption" muted style={{ marginTop: 5 }}>
             {hint}
           </T>
@@ -156,7 +260,15 @@ export function Field({ label, hint, ...input }: { label: string; hint?: ReactNo
 }
 
 /** 여러 개 중 하나 고르기 */
-export function Seg<K extends string>({ items, value, onChange }: { items: [K, string][]; value: K; onChange: (k: K) => void }) {
+export function Seg<K extends string>({
+  items,
+  value,
+  onChange,
+}: {
+  items: [K, string][];
+  value: K;
+  onChange: (k: K) => void;
+}) {
   const c = useColors();
   return (
     <View style={[styles.seg, { backgroundColor: c.grid }]}>
@@ -168,9 +280,19 @@ export function Seg<K extends string>({ items, value, onChange }: { items: [K, s
             accessibilityRole="button"
             accessibilityState={{ selected: on }}
             onPress={() => onChange(k)}
-            style={[styles.segBtn, on && { backgroundColor: c.surface, elevation: 1 }]}
+            style={[
+              styles.segBtn,
+              on && { backgroundColor: c.surface, elevation: 1 },
+            ]}
           >
-            <Text style={{ fontSize: 13, fontWeight: '600', color: on ? c.ink : c.muted }} numberOfLines={1}>
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: "600",
+                color: on ? c.ink : c.muted,
+              }}
+              numberOfLines={1}
+            >
               {label}
             </Text>
           </Pressable>
@@ -180,26 +302,75 @@ export function Seg<K extends string>({ items, value, onChange }: { items: [K, s
   );
 }
 
-export function Chip({ label, on, onPress }: { label: string; on?: boolean; onPress?: () => void }) {
+export function Chip({
+  label,
+  on,
+  onPress,
+}: {
+  label: string;
+  on?: boolean;
+  onPress?: () => void;
+}) {
   const c = useColors();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected: !!on }}
       onPress={onPress}
-      style={[styles.chip, { borderColor: on ? c.ink : c.line, backgroundColor: on ? c.ink : c.surface }]}
+      style={[
+        styles.chip,
+        {
+          borderColor: on ? c.ink : c.line,
+          backgroundColor: on ? c.ink : c.surface,
+        },
+      ]}
     >
-      <Text style={{ fontSize: 13, fontWeight: on ? '600' : '500', color: on ? c.paper : c.ink }}>{label}</Text>
+      <Text
+        style={{
+          fontSize: 13,
+          fontWeight: on ? "600" : "500",
+          color: on ? c.paper : c.ink,
+        }}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
 
-export function Note({ kind = 'info', children }: { kind?: 'info' | 'ok' | 'bad' | 'warn'; children: ReactNode }) {
+export function Note({
+  kind = "info",
+  children,
+}: {
+  kind?: "info" | "ok" | "bad" | "warn";
+  children: ReactNode;
+}) {
   const c = useColors();
-  const bg = kind === 'ok' ? c.okSoft : kind === 'bad' ? c.redSoft : kind === 'warn' ? c.hl : c.blueSoft;
-  const fg = kind === 'ok' ? c.ok : kind === 'bad' ? c.red : kind === 'warn' ? c.ink : c.blue;
+  const bg =
+    kind === "ok"
+      ? c.okSoft
+      : kind === "bad"
+        ? c.redSoft
+        : kind === "warn"
+          ? c.hl
+          : c.blueSoft;
+  const fg =
+    kind === "ok"
+      ? c.ok
+      : kind === "bad"
+        ? c.red
+        : kind === "warn"
+          ? c.ink
+          : c.blue;
   return (
-    <View style={{ backgroundColor: bg, borderRadius: radius.sm, padding: 10, marginVertical: 6 }}>
+    <View
+      style={{
+        backgroundColor: bg,
+        borderRadius: radius.sm,
+        padding: 10,
+        marginVertical: 6,
+      }}
+    >
       <T v="small" color={fg}>
         {children}
       </T>
@@ -208,11 +379,290 @@ export function Note({ kind = 'info', children }: { kind?: 'info' | 'ok' | 'bad'
 }
 
 const styles = StyleSheet.create({
-  bar: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, minHeight: 56, borderBottomWidth: 1 },
-  iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  btn: { minHeight: 48, borderRadius: radius.md, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
-  input: { minHeight: 46, borderWidth: 1.5, borderRadius: 10, paddingHorizontal: 12, fontSize: 15 },
-  seg: { flexDirection: 'row', borderRadius: 10, padding: 3, gap: 3 },
-  segBtn: { flex: 1, minHeight: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
-  chip: { borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: 13, minHeight: 36, justifyContent: 'center' },
+  bar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    minHeight: 56,
+    borderBottomWidth: 1,
+  },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btn: {
+    minHeight: 48,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+  },
+  input: {
+    minHeight: 46,
+    borderWidth: 1.5,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    fontSize: 15,
+  },
+  seg: { flexDirection: "row", borderRadius: 10, padding: 3, gap: 3 },
+  segBtn: {
+    flex: 1,
+    minHeight: 40,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  chip: {
+    borderWidth: 1,
+    borderRadius: radius.pill,
+    paddingHorizontal: 13,
+    minHeight: 36,
+    justifyContent: "center",
+  },
+  sheetBg: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)" },
+  sheet: {
+    maxHeight: "88%",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  menu: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingVertical: 12,
+  },
 });
+
+// ---------- 아이콘, 시트, 빈 화면, 알림
+
+export type IconName = ComponentProps<typeof MaterialIcons>["name"];
+
+export function Icon({
+  name,
+  size = 22,
+  color,
+}: {
+  name: IconName;
+  size?: number;
+  color?: string;
+}) {
+  const c = useColors();
+  return <MaterialIcons name={name} size={size} color={color || c.ink} />;
+}
+
+export function IconBtn({
+  name,
+  label,
+  onPress,
+  color,
+}: {
+  name: IconName;
+  label: string;
+  onPress: () => void;
+  color?: string;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      hitSlop={8}
+      style={({ pressed }) => [styles.iconBtn, { opacity: pressed ? 0.6 : 1 }]}
+    >
+      <Icon name={name} color={color} />
+    </Pressable>
+  );
+}
+
+/** 아래에서 올라오는 시트 */
+export function Sheet({
+  open,
+  onClose,
+  title,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title?: string;
+  children: ReactNode;
+}) {
+  const c = useColors();
+  return (
+    <Modal
+      visible={open}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+      statusBarTranslucent
+      navigationBarTranslucent
+    >
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+        <Pressable
+          style={styles.sheetBg}
+          onPress={onClose}
+          accessibilityLabel="닫기"
+        />
+        <SafeAreaView
+          edges={["bottom"]}
+          style={[styles.sheet, { backgroundColor: c.surface }]}
+        >
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ padding: space.lg }}
+          >
+            {title ? (
+              <T v="h2" style={{ marginBottom: 12 }}>
+                {title}
+              </T>
+            ) : null}
+            {children}
+          </ScrollView>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+/** 시트 안 메뉴 한 줄 */
+export function MenuItem({
+  icon,
+  title,
+  sub,
+  danger,
+  onPress,
+}: {
+  icon: IconName;
+  title: string;
+  sub?: string;
+  danger?: boolean;
+  onPress: () => void;
+}) {
+  const c = useColors();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [styles.menu, { opacity: pressed ? 0.6 : 1 }]}
+    >
+      <Icon name={icon} color={danger ? c.red : c.ink} />
+      <View style={{ flex: 1 }}>
+        <T v="h3" color={danger ? c.red : undefined}>
+          {title}
+        </T>
+        {sub ? (
+          <T v="small" muted>
+            {sub}
+          </T>
+        ) : null}
+      </View>
+    </Pressable>
+  );
+}
+
+/** 내용이 없을 때 안내 카드 */
+export function Empty({
+  title,
+  body,
+  action,
+  onAction,
+}: {
+  title: string;
+  body?: string;
+  action?: string;
+  onAction?: () => void;
+}) {
+  return (
+    <Card style={{ alignItems: "center", paddingVertical: 26 }}>
+      <T v="h3" style={{ textAlign: "center" }}>
+        {title}
+      </T>
+      {body ? (
+        <T v="small" muted style={{ textAlign: "center", marginTop: 6 }}>
+          {body}
+        </T>
+      ) : null}
+      {action ? (
+        <Button
+          title={action}
+          onPress={onAction}
+          style={{ marginTop: 16, alignSelf: "stretch" }}
+        />
+      ) : null}
+    </Card>
+  );
+}
+
+/** 섹션 제목 + 오른쪽 링크 */
+export function SecHead({
+  title,
+  action,
+  onAction,
+}: {
+  title: string;
+  action?: string;
+  onAction?: () => void;
+}) {
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 18,
+        marginBottom: 8,
+      }}
+    >
+      <T v="label" muted style={{ flex: 1 }}>
+        {title}
+      </T>
+      {action ? <Button kind="link" title={action} onPress={onAction} /> : null}
+    </View>
+  );
+}
+
+/** 숫자 세 칸 요약 */
+export function Stats({ items }: { items: [string | number, string][] }) {
+  const c = useColors();
+  return (
+    <View style={{ flexDirection: "row", gap: 8, marginBottom: space.md }}>
+      {items.map(([v, l]) => (
+        <View
+          key={l}
+          style={{
+            flex: 1,
+            backgroundColor: c.surface,
+            borderColor: c.line,
+            borderWidth: 1,
+            borderRadius: radius.md,
+            paddingVertical: 12,
+            alignItems: "center",
+          }}
+        >
+          <T v="h2">{String(v)}</T>
+          <T v="caption" muted>
+            {l}
+          </T>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+export const toast = (msg: string) =>
+  ToastAndroid.show(msg, ToastAndroid.SHORT);
+
+/** 되돌릴 수 없는 일을 하기 전에 묻는다 */
+export const confirm = (
+  title: string,
+  msg: string,
+  ok: string,
+  onOk: () => void,
+) =>
+  Alert.alert(title, msg, [
+    { text: "취소", style: "cancel" },
+    { text: ok, style: "destructive", onPress: onOk },
+  ]);

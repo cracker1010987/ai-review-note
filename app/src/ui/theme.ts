@@ -16,6 +16,8 @@ const light = {
   okSoft: '#E3F5EB',
   hl: 'rgba(255,222,64,0.55)',
   warn: '#B26A00',
+  heat: ['#FFFFFF', '#FDE3E5', '#F3A3AA', '#D6303B'] as string[],
+  heatInk: ['#1B2A4A', '#1B2A4A', '#1B2A4A', '#FFFFFF'] as string[],
 };
 const dark: typeof light = {
   paper: '#111418',
@@ -33,6 +35,8 @@ const dark: typeof light = {
   okSoft: '#18302A',
   hl: 'rgba(255,214,0,0.2)',
   warn: '#F0B35A',
+  heat: ['#1A1E25', '#3A2228', '#7A3540', '#FF7272'],
+  heatInk: ['#ECEFF4', '#ECEFF4', '#ECEFF4', '#2A0D10'],
 };
 export type Colors = typeof light;
 

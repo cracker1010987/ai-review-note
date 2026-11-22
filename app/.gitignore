@@ -47,3 +47,6 @@ example
 
 # editor/agent local settings
 .claude/
+
+# generated
+src/ui/math/katex.gen.ts
